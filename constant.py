@@ -43,3 +43,4 @@ def style_code():
     else:
         style.map('.', foreground=[('selected', 'black'), ('active', 'black')])
     style_code_ran = 1
+
