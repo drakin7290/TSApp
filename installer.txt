@@ -1,8 +1,7 @@
 googletrans==3.1.0a0
-tkinter
 screeninfo
-PIL
+pillow
 googletrans
 pytesseract
-cv2
 pyautogui
+customtkinter
