@@ -1,120 +1,108 @@
-from screeninfo import get_monitors
-from PIL import ImageGrab, Image, ImageTk
-import pytesseract
-import cv2
+from customtkinter import *
+from PIL import Image
 import os
-from tkinter import *
-from comboKey import gen_event
-from pynput import keyboard
-import sys
-import pyautogui
+from CTkToolTip import *
+from StoreData import *
+from CTkMessagebox import CTkMessagebox
+from tkinter import StringVar
+import time
+
+class App(CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.choose_darkmode_var = StringVar(self)
+        self.store = StoreData ("./data/global.txt")
+        self.list_themes = [_.split(".json")[0] for _ in os.listdir("./themes")]
+        self.image = None
+
+        set_appearance_mode(str(self.store.getData("darkmode", "dark")))
+        set_default_color_theme("./themes/" + str(self.store.getData("theme", "Blue")).split(".json")[0] + ".json")
+
+        self.geometry("765x520")
+        self.minsize(120, 1)
+        self.maxsize(1924, 1061)
+        self.resizable(0,  0)
+        self.title("TSApp")
+        self.configure(background="#d9d9d9")
+        self.configure(highlightbackground="#d9d9d9")
+        self.configure(highlightcolor="black")
+
+        self.title_label = CTkLabel(master=self, text='''TSAPP - Translate scan app''', font=("Tahoma", 32, "bold"))
+        self.title_label.place(x=10, y=10)
+
+        self.my_image = CTkImage(light_image=Image.open("./Image.png"),
+                                        dark_image=Image.open("./Image.png"),
+                                        size=(240, 200))
+        self.image_label = CTkLabel(self, image=self.my_image, text="")  # display image with a CTkLabel
+
+        self.image_label.place(x=480, y=10)
+
+        self.button_trans_screen = CTkButton(master=self, text='Dịch màn hình', font=("Tahoma", 14), command=self.executeScreenshot)
+        self.button_trans_screen.place (x=10, y=60 )
+
+        self.button_trans_file = CTkButton(master=self, text='Dịch file ảnh', font=("Tahoma", 14))
+        self.button_trans_file.place (x=160, y=60 )
+
+        self.setting_label = CTkLabel(master=self, text='''Cài đặt''', font=("Tahoma", 24, "bold"))
+        self.setting_label.place(x=10, y=100)
+
+        self.choose_themes_label = CTkLabel(master=self, text='''Chọn theme''', font=("Tahoma", 14))
+        self.choose_themes_label.place(x=10, y=140)
+
+        self.choose_themes_cbo = CTkComboBox(self, values=self.list_themes, command=self.choose_themes)
+        self.choose_themes_cbo.place (x=100, y=140)
+
+        self.choose_darkmode = CTkCheckBox(master=self, text="Dark mode", command=self.darkmode_command, variable=self.choose_darkmode_var, onvalue="dark", offvalue="light")
+        self.choose_darkmode.place (x=280, y=142)
+
+        self.choose_gpu_checkbox = CTkCheckBox(master=self, text='Dùng GPU để scan', font=("Tahoma", 14))
+        self.choose_gpu_checkbox.place (x=10, y=180)
+        CTkToolTip(self.choose_gpu_checkbox, delay=0.1, message="Dùng GPU để tốc độ truy xuất chữ từ hình ảnh nhanh hơn")
+
+        self.source_trans_label = CTkLabel(master=self, text='''Nguồn dịch''', font=("Tahoma", 14))
+        self.source_trans_label.place(x=10, y=220)
+        
+        self.source_trans_cbo = CTkComboBox(self, values=['Google dịch'])
+        self.source_trans_cbo.place (x=100, y=220)
 
 
-def execute():
-    print("Do Something")
+        self.afterEffects()
 
 
-on_press, on_release = gen_event(execute)
+    def darkmode_command (self):
+        set_appearance_mode(self.choose_darkmode_var.get())
+        self.store.saveData("darkmode", self.choose_darkmode_var.get())
+    
+    def choose_themes (self, choice):
+        if (self.store.getData("theme", "Blue") != choice):
+            self.store.saveData ('theme', choice)
+            msg = CTkMessagebox(title="Yêu cầu reset ứng dụng", message="Bạn cần mở lại ứng dụng để được cập nhật giao diện mới!", icon="warning", option_2="Để sau", option_1="Đóng ngay")
+            if (msg.get()=="Đóng ngay"):
+                self.destroy()
+        
+    def afterEffects(self):
+        self.choose_themes_cbo.set(self.store.getData("theme", "Blue"))
+        if(str(self.store.getData("darkmode", "dark")) == "dark"):
+            self.choose_darkmode.select()
+        else: self.choose_darkmode.deselect()
+    
+    def executeScreenshot(self):
+        self.withdraw()
+        time.sleep(0.2)
+        self.image = self.screenshot()
+        self.open_screen()
+    
+    def screenshot(self):
+            pass
 
 
-def quit(event):
-    sys.exit()  # if you want to exit the entire thing
+    def open_screen(self):
+        self.sr = CTkToplevel()
+        self.sr.attributes('-fullscreen', True)
+        self.frame_sr = CTkFrame(self.sr, background="red")
+        self.frame_sr.pack()
 
-
-# ------------ DEFINE
-path_to_tesseract = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
-
-# ------------ VARIABLES
-screen_width = 0
-screen_height = 0
-
-# ------------ GET INFOR SCREEN
-for m in get_monitors():
-    screen_width = m.width
-    screen_height = m.height
-
-# --------------- CREATE UI APP
-root = Tk()
-root.attributes('-fullscreen', True)
-root.title = "TSApp"
-root.geometry(str(screen_width)+"x"+str(screen_height))
-root.configure(bg='')
-
-
-# ----------------------------------------------
-
-# --------------------------- KEYBOARD LISTENER------------------------------
-listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-listener.start()
-# --------------------------- KEYBOARD LISTENER------------------------------
-
-# ------------- SCREENSHOT
-ss_region = (0, 0, screen_width, screen_height)
-ss_img = ImageGrab.grab(ss_region)
-
-# ------------- CREATE FILE NAME RANDOM
-filename = "{}.png".format(os.getpid())
-
-# -------------- SAVE IMAGE
-# ss_img.show()
-ss_img.save(filename)
-
-
-frame = Frame(root, background="red")
-canvas = Canvas(frame, width=screen_width,
-                height=screen_height,  bd=0, highlightthickness=0, bg='red')
-
-
-image = PhotoImage(file=filename)
-# label = Label(frame, image=image, bd=0)
-canvas.create_image(0, 0, anchor=NW, image=image)
-canvas.create_rectangle(0, 0, 200, 200, fill='', outline='orange', width=5)
-text = canvas.create_text(100, 40, text="HELLO WORLD",
-                          fill="white", font=('Helvetica 15 bold'),)
-r = canvas.create_rectangle(canvas.bbox(text), fill="black")
-canvas.tag_lower(r, text)
-canvas.pack(padx=5, pady=5)
-
-# label.pack(padx=5, pady=5)
-frame.pack()
-
-# frame = Frame(root, background="orange")
-# canvas = Canvas(frame,  bd=0, highlightthickness=0, bg='red')
-# # canvas.create_image(0, 0, anchor=NW, image=image)
-# canvas.create_rectangle(0, 0, 200, 200, fill='yellow')
-# # canvas.pack()
-# frame.pack()
-
-root.bind('<Escape>', quit)
-
-
-def action(event):
-    print('hello')
-
-
-root.bind("<ButtonPress-1>", action)
-
-root.mainloop()
-listener.stop()
-listener.join()
-
-# --------------- HANDLE IMAGE AND EXTRACT TO TEXT
-# image = cv2.imread(filename)
-# gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-# pytesseract.pytesseract.tesseract_cmd = path_to_tesseract
-
-
-# text = pytesseract.image_to_string(ss_img)
-
-# ---------- REMOVE IMAGE
-# os.remove(filename)
-
-# print(text)
-
-# import googletrans
-# from googletrans import Translator
-
-# t = Translator()
-# a = t.translate("xin chao", src="vi", dest="en")
-# print (a.text)
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
