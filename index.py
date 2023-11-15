@@ -6,6 +6,7 @@ from StoreData import *
 from CTkMessagebox import CTkMessagebox
 from tkinter import StringVar
 import time
+from googletrans import LANGUAGES
 
 class App(CTk):
     def __init__(self):
@@ -15,11 +16,15 @@ class App(CTk):
         self.store = StoreData ("./data/global.txt")
         self.list_themes = [_.split(".json")[0] for _ in os.listdir("./themes")]
         self.image = None
+        self.trans_y = 0
+        self.width_window = 765
+        self.height_window = 520
+        self.list_language = [*LANGUAGES.values()]
 
         set_appearance_mode(str(self.store.getData("darkmode", "dark")))
         set_default_color_theme("./themes/" + str(self.store.getData("theme", "Blue")).split(".json")[0] + ".json")
 
-        self.geometry("765x520")
+        self.geometry(str(self.width_window)+"x"+str(self.height_window))
         self.minsize(120, 1)
         self.maxsize(1924, 1061)
         self.resizable(0,  0)
@@ -66,6 +71,20 @@ class App(CTk):
         self.source_trans_cbo = CTkComboBox(self, values=['Google dịch'])
         self.source_trans_cbo.place (x=100, y=220)
 
+        self.trans_label = CTkLabel(master=self, text='''Dịch thuật''', font=("Tahoma", 24, "bold"))
+        self.trans_label.place(x=10, y=265+self.trans_y)
+
+        self.language_origin_label = CTkLabel(master=self, text='''Ngôn ngữ nguồn''', font=("Tahoma", 14))
+        self.language_origin_label.place(x=10, y=305+self.trans_y)
+
+        self.language_ori_cbo = CTkComboBox(self, values=self.list_language)
+        self.language_ori_cbo.place (x=125, y=305+self.trans_y)
+
+        self.language_origin_label = CTkLabel(master=self, text='''Ngôn ngữ đích''', font=("Tahoma", 14))
+        self.language_origin_label.place(x=self.width_window / 2 + 10, y=305+self.trans_y)
+
+        self.language_ori_cbo = CTkComboBox(self, values=self.list_language)
+        self.language_ori_cbo.place (x=self.width_window / 2 + 125, y=305+self.trans_y)
 
         self.afterEffects()
 
