@@ -1,2 +1,2 @@
-theme:Hades
+theme:Harlequin
 darkmode:dark
