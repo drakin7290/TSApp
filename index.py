@@ -10,18 +10,19 @@ from CTkScrollableDropdown import *
 from screeninfo import get_monitors
 import tkinter as tk
 import easyocr
+import threading
+import torch
 
 class App(CTk):
     def __init__(self):
         super().__init__()
-
-        self.reader = easyocr.Reader (['en', 'vi'], gpu=False)
 
         self.screen_width = 0
         self.screen_height = 0
         self.rect = None
 
         self.choose_darkmode_var = StringVar(self)
+        self.choose_use_gpu_var = StringVar(self)
         self.store = StoreData ("./data/global.txt")
         self.list_themes = [_.split(".json")[0] for _ in os.listdir("./themes")]
         self.image = None
@@ -60,7 +61,7 @@ class App(CTk):
         self.button_trans_screen = CTkButton(master=self, text='Dịch màn hình', font=("Tahoma", 14), command=self.executeScreenshot)
         self.button_trans_screen.place (x=10, y=60 )
 
-        self.button_trans_file = CTkButton(master=self, text='Dịch file ảnh', font=("Tahoma", 14), command=self.executeTransFile)
+        self.button_trans_file = CTkButton(master=self, text='Dịch file ảnh', font=("Tahoma", 14))
         self.button_trans_file.place (x=160, y=60 )
 
         self.setting_label = CTkLabel(master=self, text='''Cài đặt''', font=("Tahoma", 24, "bold"))
@@ -75,9 +76,9 @@ class App(CTk):
         self.choose_darkmode = CTkCheckBox(master=self, text="Dark mode", command=self.darkmode_command, variable=self.choose_darkmode_var, onvalue="dark", offvalue="light")
         self.choose_darkmode.place (x=280, y=142)
 
-        self.choose_gpu_checkbox = CTkCheckBox(master=self, text='Dùng GPU để scan', font=("Tahoma", 14))
+        self.choose_gpu_checkbox = CTkCheckBox(master=self, text='Dùng GPU để scan', state='disabled' if torch.cuda.is_available() else '!selected' ,font=("Tahoma", 14), command=self.load_easy_ocr, variable=self.choose_use_gpu_var ,onvalue=True, offvalue=False)
         self.choose_gpu_checkbox.place (x=10, y=180)
-        CTkToolTip(self.choose_gpu_checkbox, delay=0.1, message="Dùng GPU để tốc độ truy xuất chữ từ hình ảnh nhanh hơn")
+        CTkToolTip(self.choose_gpu_checkbox, delay=0.1, message="Dùng GPU để tốc độ truy xuất chữ từ hình ảnh nhanh hơn" if torch.cuda.is_available() else "Card màn hình của bạn không hỗ trợ CUDA 9.0")
 
         self.source_trans_label = CTkLabel(master=self, text='''Nguồn dịch''', font=("Tahoma", 14))
         self.source_trans_label.place(x=10, y=220)
@@ -111,8 +112,34 @@ class App(CTk):
         self.button_trans_lang = CTkButton(master=self, text='Dịch', font=("Tahoma", 14), width=self.width_window / 2)
         self.button_trans_lang.place (x=self.width_window / 2 - self.width_window / 4, y=570+self.trans_y )
 
+        self.frame_loading = CTkFrame(master=self,  width=self.width_window, height=self.height_window)
+        self.loading_title = CTkLabel(self.frame_loading, text='Please wait a moment', font=("Tahoma", 28, "bold"))
+        self.loading_title.place (relx=0.5, rely=0.1, anchor=tk.CENTER)
+        self.progressbar = CTkProgressBar(self.frame_loading,
+                                           width=self.width_window * (2/3),
+                                           height=20,
+                                           border_width=2,
+                                           mode='indeterminate',
+                                           indeterminate_speed=1.5)
+        self.loading_img = CTkImage(light_image=Image.open("./asset/loading-happy.png"),
+                                        dark_image=Image.open("./asset/loading-happy.png"),
+                                        size=(300, 240))
+        self.loading_image_label = CTkLabel(self.frame_loading, image=self.loading_img, text="")  # display image with a CTkLabel
+        self.loading_image_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.progressbar.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
+        self.show_loading()
+        self.load_easy_ocr()
+
         self.afterEffects()
 
+
+    def show_loading(self):
+        self.frame_loading.place(x=0,y=0)
+        self.progressbar.start()
+    
+    def hide_loading(self):
+        self.progressbar.stop()
+        self.frame_loading.place_forget()
 
     def darkmode_command (self):
         set_appearance_mode(self.choose_darkmode_var.get())
@@ -132,6 +159,7 @@ class App(CTk):
         if(str(self.store.getData("darkmode", "dark")) == "dark"):
             self.choose_darkmode.select()
         else: self.choose_darkmode.deselect()
+        
     
     def executeScreenshot(self):
         self.withdraw()
@@ -205,6 +233,13 @@ class App(CTk):
 
         self.sr.bind('<Escape>', quit)
         self.sr.focus_force()
+
+    def load_easy_ocr(self):
+        def load_read():
+            self.reader = easyocr.Reader (['en', 'vi'], gpu=bool(self.choose_use_gpu_var.get()))
+            self.hide_loading()
+        my_thread = threading.Thread(target=load_read)
+        my_thread.start()
 
 if __name__ == "__main__":
     app = App()

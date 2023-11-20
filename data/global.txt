@@ -1,2 +1,2 @@
-theme:Harlequin
+theme:Orange
 darkmode:dark
