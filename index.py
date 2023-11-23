@@ -5,7 +5,7 @@ from StoreData import *
 from CTkMessagebox import CTkMessagebox
 from tkinter import StringVar
 import time
-from googletrans import LANGUAGES
+from googletrans import LANGUAGES, Translator
 from CTkScrollableDropdown import *
 from screeninfo import get_monitors
 import tkinter as tk
@@ -20,6 +20,7 @@ class App(CTk):
         self.screen_width = 0
         self.screen_height = 0
         self.rect = None
+        self.translator = Translator()
 
         self.choose_darkmode_var = StringVar(self)
         self.choose_use_gpu_var = StringVar(self)
@@ -33,7 +34,10 @@ class App(CTk):
         self.coord = {"x1": 0, "y1": 0, "x2": 0, "y2": 0}
 
         set_appearance_mode(str(self.store.getData("darkmode", "dark")))
-        set_default_color_theme("./themes/" + str(self.store.getData("theme", "Blue")).split(".json")[0] + ".json")
+        set_default_color_theme(
+            "./themes/" + 
+            str(self.store.getData("theme", "Blue")).split(".json")[0] + ".json"
+        )
 
         for m in get_monitors():
             self.screen_width = m.width
@@ -109,7 +113,7 @@ class App(CTk):
         self.language_dest_textbox = CTkTextbox(master=self, width=self.width_window / 2 - 20, height=200, corner_radius=12)
         self.language_dest_textbox.place (x=self.width_window / 2 + 10, y=355+self.trans_y)
 
-        self.button_trans_lang = CTkButton(master=self, text='Dịch', font=("Tahoma", 14), width=self.width_window / 2)
+        self.button_trans_lang = CTkButton(master=self, text='Dịch', font=("Tahoma", 14), width=self.width_window / 2, command=self.translate_function)
         self.button_trans_lang.place (x=self.width_window / 2 - self.width_window / 4, y=570+self.trans_y )
 
         self.frame_loading = CTkFrame(master=self,  width=self.width_window, height=self.height_window)
@@ -128,6 +132,7 @@ class App(CTk):
         self.loading_image_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.progressbar.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
         self.show_loading()
+
         self.load_easy_ocr()
 
         self.afterEffects()
@@ -233,6 +238,13 @@ class App(CTk):
 
         self.sr.bind('<Escape>', quit)
         self.sr.focus_force()
+
+    def translate_function(self):
+        text_ori = self.language_ori_textbox.get("0.0", "end")
+        result = self.translator.translate(
+                text_ori, src="en", dest="vi")
+        self.language_dest_textbox.delete("0.0", "end")  # delete all text
+        self.language_dest_textbox.insert("0.0", result.text)  # insert at line 0 character 0
 
     def load_easy_ocr(self):
         def load_read():
