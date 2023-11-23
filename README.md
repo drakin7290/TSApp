@@ -12,5 +12,7 @@ _______
 
 # BUILD PROJECT
 
+pyinstaller --noconsole --onefile index.py
+
 ver py: https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe
 https://stackoverflow.com/questions/60987997/why-torch-cuda-is-available-returns-false-even-after-installing-pytorch-with
