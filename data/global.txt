@@ -1,2 +1,2 @@
-theme:TrojanBlue
-darkmode:dark
+theme:Blue
+darkmode:light

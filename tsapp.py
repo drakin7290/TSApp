@@ -45,6 +45,8 @@ class App(CTk):
             self.screen_width = m.width
             self.screen_height = m.height
 
+        
+
         self.geometry(str(self.width_window)+"x"+str(self.height_window))
         self.minsize(120, 1)
         self.maxsize(1924, 1061)
@@ -54,69 +56,11 @@ class App(CTk):
         self.configure(highlightbackground="#d9d9d9")
         self.configure(highlightcolor="black")
 
-        self.title_label = CTkLabel(master=self, text='''TSAPP - Translate scan app''', font=("Tahoma", 32, "bold"))
-        self.title_label.place(x=10, y=10)
+        self.frame_main = CTkFrame(master=self, width=self.width_window, height=self.height_window)
 
-        self.my_image = CTkImage(light_image=Image.open("./asset/around.png"),
-                                        dark_image=Image.open("./asset/around.png"),
-                                        size=(240, 200))
-        self.image_label = CTkLabel(self, image=self.my_image, text="")  # display image with a CTkLabel
+        self.frame_main.place(x=0, y=0)
 
-        self.image_label.place(x=480, y=10)
-
-        self.button_trans_screen = CTkButton(master=self, text='Dịch màn hình', font=("Tahoma", 14), command=self.executeScreenshot)
-        self.button_trans_screen.place (x=10, y=60 )
-
-        self.button_trans_file = CTkButton(master=self, text='Dịch file ảnh', font=("Tahoma", 14))
-        self.button_trans_file.place (x=160, y=60 )
-
-        self.setting_label = CTkLabel(master=self, text='''Cài đặt''', font=("Tahoma", 24, "bold"))
-        self.setting_label.place(x=10, y=100)
-
-        self.choose_themes_label = CTkLabel(master=self, text='''Chọn theme''', font=("Tahoma", 14))
-        self.choose_themes_label.place(x=10, y=140)
-
-        self.choose_themes_cbo = CTkComboBox(self, values=self.list_themes, command=self.choose_themes)
-        self.choose_themes_cbo.place (x=100, y=140)
-
-        self.choose_darkmode = CTkCheckBox(master=self, text="Dark mode", command=self.darkmode_command, variable=self.choose_darkmode_var, onvalue="dark", offvalue="light")
-        self.choose_darkmode.place (x=280, y=142)
-
-        self.choose_gpu_checkbox = CTkCheckBox(master=self, text='Dùng GPU để scan', state='disabled' if torch.cuda.is_available() else '!selected' ,font=("Tahoma", 14), command=self.load_easy_ocr, variable=self.choose_use_gpu_var ,onvalue=True, offvalue=False)
-        self.choose_gpu_checkbox.place (x=10, y=180)
-        CTkToolTip(self.choose_gpu_checkbox, delay=0.1, message="Dùng GPU để tốc độ truy xuất chữ từ hình ảnh nhanh hơn" if torch.cuda.is_available() else "Card màn hình của bạn không hỗ trợ CUDA 9.0")
-
-        self.source_trans_label = CTkLabel(master=self, text='''Nguồn dịch''', font=("Tahoma", 14))
-        self.source_trans_label.place(x=10, y=220)
-        
-        self.source_trans_cbo = CTkComboBox(self, values=['Google dịch'])
-        self.source_trans_cbo.place (x=100, y=220)
-
-        self.trans_label = CTkLabel(master=self, text='''Dịch thuật''', font=("Tahoma", 24, "bold"))
-        self.trans_label.place(x=10, y=265+self.trans_y)
-
-        self.language_origin_label = CTkLabel(master=self, text='''Ngôn ngữ nguồn''', font=("Tahoma", 14))
-        self.language_origin_label.place(x=10, y=305+self.trans_y)
-
-        self.language_ori_cbo = CTkComboBox(self)
-        self.language_ori_cbo.place (x=125, y=305+self.trans_y)
-        CTkScrollableDropdown(self.language_ori_cbo, values=self.list_language, button_color="transparent", frame_corner_radius=4)
-
-        self.language_dest_label = CTkLabel(master=self, text='''Ngôn ngữ đích''', font=("Tahoma", 14))
-        self.language_dest_label.place(x=self.width_window / 2 + 10, y=305+self.trans_y)
-
-        self.language_dest_cbo = CTkComboBox(self)
-        self.language_dest_cbo.place (x=self.width_window / 2 + 125, y=305+self.trans_y)
-        CTkScrollableDropdown(self.language_dest_cbo, values=self.list_language, button_color="transparent", frame_corner_radius=4)
-
-        self.language_ori_textbox = CTkTextbox(master=self, width=self.width_window / 2 - 20, height=200, corner_radius=12)
-        self.language_ori_textbox.place (x=10, y=355+self.trans_y)
-
-        self.language_dest_textbox = CTkTextbox(master=self, width=self.width_window / 2 - 20, height=200, corner_radius=12)
-        self.language_dest_textbox.place (x=self.width_window / 2 + 10, y=355+self.trans_y)
-
-        self.button_trans_lang = CTkButton(master=self, text='Dịch', font=("Tahoma", 14), width=self.width_window / 2, command=self.translate_function)
-        self.button_trans_lang.place (x=self.width_window / 2 - self.width_window / 4, y=570+self.trans_y )
+        self.draw_ui()
 
         self.frame_loading = CTkFrame(master=self,  width=self.width_window, height=self.height_window)
         self.loading_title = CTkLabel(self.frame_loading, text='Please wait a moment', font=("Tahoma", 28, "bold"))
@@ -139,6 +83,70 @@ class App(CTk):
 
         self.afterEffects()
 
+    def draw_ui (self):
+        self.title_label = CTkLabel(master=self.frame_main, text='''TSAPP - Translate scan app''', font=("Tahoma", 32, "bold"))
+        self.title_label.place(x=10, y=10)
+
+        self.my_image = CTkImage(light_image=Image.open("./asset/around.png"),
+                                        dark_image=Image.open("./asset/around.png"),
+                                        size=(240, 200))
+        self.image_label = CTkLabel(self.frame_main, image=self.my_image, text="")  # display image with a CTkLabel
+
+        self.image_label.place(x=480, y=10)
+
+        self.button_trans_screen = CTkButton(master=self.frame_main, text='Dịch màn hình', font=("Tahoma", 14), command=self.executeScreenshot)
+        self.button_trans_screen.place (x=10, y=60 )
+
+        self.button_trans_file = CTkButton(master=self.frame_main, text='Dịch file ảnh', font=("Tahoma", 14))
+        self.button_trans_file.place (x=160, y=60 )
+
+        self.setting_label = CTkLabel(master=self.frame_main, text='''Cài đặt''', font=("Tahoma", 24, "bold"))
+        self.setting_label.place(x=10, y=100)
+
+        self.choose_themes_label = CTkLabel(master=self.frame_main, text='''Chọn theme''', font=("Tahoma", 14))
+        self.choose_themes_label.place(x=10, y=140)
+
+        self.choose_themes_cbo = CTkComboBox(self.frame_main, values=self.list_themes, command=self.choose_themes)
+        self.choose_themes_cbo.place (x=100, y=140)
+
+        self.choose_darkmode = CTkCheckBox(master=self.frame_main, text="Dark mode", command=self.darkmode_command, variable=self.choose_darkmode_var, onvalue="dark", offvalue="light")
+        self.choose_darkmode.place (x=280, y=142)
+
+        self.choose_gpu_checkbox = CTkCheckBox(master=self.frame_main, text='Dùng GPU để scan', state='disabled' if torch.cuda.is_available() else '!selected' ,font=("Tahoma", 14), command=self.load_easy_ocr, variable=self.choose_use_gpu_var ,onvalue=True, offvalue=False)
+        self.choose_gpu_checkbox.place (x=10, y=180)
+        CTkToolTip(self.choose_gpu_checkbox, delay=0.1, message="Dùng GPU để tốc độ truy xuất chữ từ hình ảnh nhanh hơn" if torch.cuda.is_available() else "Card màn hình của bạn không hỗ trợ CUDA 9.0")
+
+        self.source_trans_label = CTkLabel(master=self.frame_main, text='''Nguồn dịch''', font=("Tahoma", 14))
+        self.source_trans_label.place(x=10, y=220)
+        
+        self.source_trans_cbo = CTkComboBox(self.frame_main, values=['Google dịch'])
+        self.source_trans_cbo.place (x=100, y=220)
+
+        self.trans_label = CTkLabel(master=self.frame_main, text='''Dịch thuật''', font=("Tahoma", 24, "bold"))
+        self.trans_label.place(x=10, y=265+self.trans_y)
+
+        self.language_origin_label = CTkLabel(master=self.frame_main, text='''Ngôn ngữ nguồn''', font=("Tahoma", 14))
+        self.language_origin_label.place(x=10, y=305+self.trans_y)
+
+        self.language_ori_cbo = CTkComboBox(self.frame_main)
+        self.language_ori_cbo.place (x=125, y=305+self.trans_y)
+        CTkScrollableDropdown(self.language_ori_cbo, values=self.list_language, button_color="transparent", frame_corner_radius=4)
+
+        self.language_dest_label = CTkLabel(master=self.frame_main, text='''Ngôn ngữ đích''', font=("Tahoma", 14))
+        self.language_dest_label.place(x=self.width_window / 2 + 10, y=305+self.trans_y)
+
+        self.language_dest_cbo = CTkComboBox(self.frame_main)
+        self.language_dest_cbo.place (x=self.width_window / 2 + 125, y=305+self.trans_y)
+        CTkScrollableDropdown(self.language_dest_cbo, values=self.list_language, button_color="transparent", frame_corner_radius=4)
+
+        self.language_ori_textbox = CTkTextbox(master=self.frame_main, width=self.width_window / 2 - 20, height=200, corner_radius=12)
+        self.language_ori_textbox.place (x=10, y=355+self.trans_y)
+
+        self.language_dest_textbox = CTkTextbox(master=self.frame_main, width=self.width_window / 2 - 20, height=200, corner_radius=12)
+        self.language_dest_textbox.place (x=self.width_window / 2 + 10, y=355+self.trans_y)
+
+        self.button_trans_lang = CTkButton(master=self.frame_main, text='Dịch', font=("Tahoma", 14), width=self.width_window / 2, command=self.translate_function)
+        self.button_trans_lang.place (x=self.width_window / 2 - self.width_window / 4, y=570+self.trans_y )
 
     def show_loading(self):
         self.frame_loading.place(x=0,y=0)
@@ -231,10 +239,7 @@ class App(CTk):
                                         fill="white", font=('Helvetica 12 bold'), width=((self.coord['x2'] + 6) - (self.coord['x1'] + 3)))
             r = self.canvas_sr.create_rectangle(self.canvas_sr.bbox(text_sr), fill="black")
             self.canvas_sr.tag_lower(r, text_sr)
-
-
             # ------------- CREATE FILE NAME RANDOM
-        
         def actionMotion(event):
             if (self.rect != None):
                 self.canvas_sr.delete(self.rect)
