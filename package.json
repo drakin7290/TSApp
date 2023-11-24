@@ -1,0 +1,12 @@
+{
+  "name": "tsapp",
+  "version": "1.0.0",
+  "description": "- https://www.miai.vn/2019/08/22/ocr-nhan-dang-van-ban-tieng-viet-voi-tesseract-ocr/\r  - Or download file zip from there and unzip its (use in Windows) to project: https://drive.google.com/file/d/1ah6r-eqm8WDOnjSv_y5o3yYylGSbOZMl/view?usp=sharing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "pyinstaller tsapp.py && cp -r themes dist/tsapp && cp -r asset dist/tsapp && cd dist/tsapp && mkdir temp && mkdir data && cd data && touch global.txt"
+  },
+  "author": "",
+  "license": "ISC"
+}
