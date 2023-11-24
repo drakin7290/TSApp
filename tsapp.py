@@ -5,13 +5,15 @@ from StoreData import *
 from CTkMessagebox import CTkMessagebox
 from tkinter import StringVar
 import time
-from googletrans import LANGUAGES, Translator
+from googletrans import LANGUAGES, Translator, LANGCODES
 from CTkScrollableDropdown import *
 from screeninfo import get_monitors
 import tkinter as tk
 import easyocr
 import threading
 import torch
+import glob
+
 
 class App(CTk):
     def __init__(self):
@@ -30,7 +32,7 @@ class App(CTk):
         self.trans_y = 0
         self.width_window = 765
         self.height_window = 620
-        self.list_language = [*LANGUAGES.values()]
+        self.list_language = [*LANGCODES.keys()]
         self.coord = {"x1": 0, "y1": 0, "x2": 0, "y2": 0}
 
         set_appearance_mode(str(self.store.getData("darkmode", "dark")))
@@ -55,8 +57,8 @@ class App(CTk):
         self.title_label = CTkLabel(master=self, text='''TSAPP - Translate scan app''', font=("Tahoma", 32, "bold"))
         self.title_label.place(x=10, y=10)
 
-        self.my_image = CTkImage(light_image=Image.open("./Image.png"),
-                                        dark_image=Image.open("./Image.png"),
+        self.my_image = CTkImage(light_image=Image.open("./asset/around.png"),
+                                        dark_image=Image.open("./asset/around.png"),
                                         size=(240, 200))
         self.image_label = CTkLabel(self, image=self.my_image, text="")  # display image with a CTkLabel
 
@@ -176,7 +178,7 @@ class App(CTk):
             ss_region = (0, 0, self.screen_width, self.screen_height)
             ss_img = ImageGrab.grab(ss_region)
             # ------------- CREATE FILE NAME RANDOM
-            filename = "{}.png".format(os.getpid())
+            filename = "temp/{}.png".format(os.getpid())
             ss_img.save(filename)
             return tk.PhotoImage(file=filename)
 
@@ -185,6 +187,11 @@ class App(CTk):
         # self.reader = easyocr.Reader (['en', 'vi'], gpu=False)
         pass
 
+    def removeTempImage(self):
+        files = glob.glob('./temp/*')
+        for f in files:
+            os.remove(f)
+
     def open_screen(self):
         self.sr = tk.Toplevel()
         self.sr.attributes('-fullscreen', True)
@@ -192,6 +199,7 @@ class App(CTk):
         self.canvas_sr = tk.Canvas(self.frame_sr, width=self.screen_width,
                        height=self.screen_height,  bd=0, highlightthickness=0, bg='red')
         self.canvas_sr.create_image(0, 0, anchor=NW, image=self.image)
+        self.removeTempImage() 
         self.canvas_sr.pack (padx=3, pady=3)
         self.frame_sr.pack()
         
@@ -210,16 +218,20 @@ class App(CTk):
             ss_region = (self.coord['x1'] + 3, self.coord['y1'] + 3,
                         self.coord['x2'] + 6, self.coord['y2'] + 6)
             ss_img = ImageGrab.grab(ss_region)
-            filename = "{}.png".format(os.getpid())
+            filename = "temp/{}.png".format(os.getpid())
             ss_img.save(filename)
             result = self.reader.readtext (filename)
+            self.removeTempImage()
             text = ''
             for x in result:
                 text += x[1]
-            text_sr = self.canvas_sr.create_text(result[0][0][0][0] + self.coord['x1'], result[0][0][0][1] + self.coord['y1'], text=text,
-                                        fill="white", font=('Helvetica 15 bold'),)
+            result_trans = self.translator.translate(
+                text, src=LANGCODES[self.language_ori_cbo.get()], dest=LANGCODES[self.language_dest_cbo.get()])
+            text_sr = self.canvas_sr.create_text(self.coord['x1'] + 3, self.coord['y1'] + 3, anchor="nw", text=result_trans.text,
+                                        fill="white", font=('Helvetica 12 bold'), width=((self.coord['x2'] + 6) - (self.coord['x1'] + 3)))
             r = self.canvas_sr.create_rectangle(self.canvas_sr.bbox(text_sr), fill="black")
             self.canvas_sr.tag_lower(r, text_sr)
+
 
             # ------------- CREATE FILE NAME RANDOM
         
@@ -230,8 +242,6 @@ class App(CTk):
             self.coord['y2'] = event.y
             self.rect = self.canvas_sr.create_rectangle(self.coord['x1'], self.coord['y1'], self.coord['x2'], self.coord['y2'], fill='',
                                         outline='orange', width=3)
-
-
         self.sr.bind("<ButtonPress-1>", actionPress)
         self.sr.bind("<ButtonRelease-1>", actionRelease)
         self.sr.bind("<B1-Motion>", actionMotion)
@@ -240,9 +250,12 @@ class App(CTk):
         self.sr.focus_force()
 
     def translate_function(self):
+
+        #cbo ori
+
         text_ori = self.language_ori_textbox.get("0.0", "end")
         result = self.translator.translate(
-                text_ori, src="en", dest="vi")
+                text_ori, src=LANGCODES[self.language_ori_cbo.get()], dest=LANGCODES[self.language_dest_cbo.get()])
         self.language_dest_textbox.delete("0.0", "end")  # delete all text
         self.language_dest_textbox.insert("0.0", result.text)  # insert at line 0 character 0
 
