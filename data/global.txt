@@ -1,2 +1,2 @@
-theme:Blue
-darkmode:light
+theme:Green
+darkmode:dark

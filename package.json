@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "pyinstaller tsapp.py && cp -r themes dist/tsapp && cp -r asset dist/tsapp && cd dist/tsapp && mkdir temp && mkdir data && cd data && touch global.txt"
+    "build": "pyinstaller --noconsole tsapp.py && cp -r themes dist/tsapp && cp -r asset dist/tsapp && cd dist/tsapp && mkdir temp && mkdir data && cd data && touch global.txt"
   },
   "author": "",
   "license": "ISC"

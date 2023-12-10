@@ -45,8 +45,6 @@ class App(CTk):
             self.screen_width = m.width
             self.screen_height = m.height
 
-        
-
         self.geometry(str(self.width_window)+"x"+str(self.height_window))
         self.minsize(120, 1)
         self.maxsize(1924, 1061)
@@ -55,6 +53,9 @@ class App(CTk):
         self.configure(background="#d9d9d9")
         self.configure(highlightbackground="#d9d9d9")
         self.configure(highlightcolor="black")
+        photo = tk.PhotoImage(file = "./asset/logo.png")
+        self.iconphoto(False, photo)
+        self.iconbitmap("./asset/logo.ico")
 
         self.frame_main = CTkFrame(master=self, width=self.width_window, height=self.height_window)
 
@@ -78,10 +79,8 @@ class App(CTk):
         self.loading_image_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.progressbar.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
         self.show_loading()
-
         self.load_easy_ocr()
-
-        self.afterEffects()
+        self.after_effects()
 
     def draw_ui (self):
         self.title_label = CTkLabel(master=self.frame_main, text='''TSAPP - Translate scan app''', font=("Tahoma", 32, "bold"))
@@ -94,10 +93,10 @@ class App(CTk):
 
         self.image_label.place(x=480, y=10)
 
-        self.button_trans_screen = CTkButton(master=self.frame_main, text='Dịch màn hình', font=("Tahoma", 14), command=self.executeScreenshot)
+        self.button_trans_screen = CTkButton(master=self.frame_main, text='Dịch màn hình', font=("Tahoma", 14), command=self.execute_screenshot)
         self.button_trans_screen.place (x=10, y=60 )
 
-        self.button_trans_file = CTkButton(master=self.frame_main, text='Dịch file ảnh', font=("Tahoma", 14))
+        self.button_trans_file = CTkButton(master=self.frame_main, text='Dịch file ảnh', font=("Tahoma", 14), command=self.execute_trans_file)
         self.button_trans_file.place (x=160, y=60 )
 
         self.setting_label = CTkLabel(master=self.frame_main, text='''Cài đặt''', font=("Tahoma", 24, "bold"))
@@ -167,7 +166,7 @@ class App(CTk):
             if (msg.get()=="Đóng ngay"):
                 self.destroy()
         
-    def afterEffects(self):
+    def after_effects(self):
         self.choose_themes_cbo.set(self.store.getData("theme", "Blue"))
         self.language_ori_cbo.set('english')
         self.language_dest_cbo.set('vietnamese')
@@ -175,27 +174,36 @@ class App(CTk):
             self.choose_darkmode.select()
         else: self.choose_darkmode.deselect()
         
-    
-    def executeScreenshot(self):
+    def execute_screenshot(self):
         self.withdraw()
         time.sleep(0.2)
         self.image = self.screenshot()
         self.open_screen()
     
     def screenshot(self):
-            ss_region = (0, 0, self.screen_width, self.screen_height)
-            ss_img = ImageGrab.grab(ss_region)
-            # ------------- CREATE FILE NAME RANDOM
-            filename = "temp/{}.png".format(os.getpid())
-            ss_img.save(filename)
-            return tk.PhotoImage(file=filename)
+        ss_region = (0, 0, self.screen_width, self.screen_height)
+        ss_img = ImageGrab.grab(ss_region)
+        # ------------- CREATE FILE NAME RANDOM
+        filename = "temp/{}.png".format(os.getpid())
+        ss_img.save(filename)
+        return tk.PhotoImage(file=filename)
 
 
-    def executeTransFile (self):
+    def execute_trans_file (self):
         # self.reader = easyocr.Reader (['en', 'vi'], gpu=False)
-        pass
+        file_path = tk.filedialog.askopenfilename(title="Select Image File", filetypes=(("Image files", "*.jpg;*.jpeg;*.png;*.gif"), ("All files", "*.*")))
+        print (file_path)
+        if file_path:
+            # Open the selected image file
+            self.image = tk.PhotoImage(file=file_path)
+            self.withdraw()
+            self.open_screen()
+        else:
+            msg = CTkMessagebox(title="Chọn nhầm file", message="Bạn chọn chưa đúng file ảnh", icon="warning", option_1="Đóng ngay")
+    
 
-    def removeTempImage(self):
+
+    def remove_temp_image(self):
         files = glob.glob('./temp/*')
         for f in files:
             os.remove(f)
@@ -207,15 +215,22 @@ class App(CTk):
         self.canvas_sr = tk.Canvas(self.frame_sr, width=self.screen_width,
                        height=self.screen_height,  bd=0, highlightthickness=0, bg='red')
         self.canvas_sr.create_image(0, 0, anchor=NW, image=self.image)
-        self.removeTempImage() 
+        self.remove_temp_image() 
         self.canvas_sr.pack (padx=3, pady=3)
         self.frame_sr.pack()
+
+        text_canvas = []
+
+        def clear_text():
+            for r in text_canvas:
+                self.canvas_sr.delete(r)
         
         def quit(event):
             self.sr.destroy()
             self.deiconify()
         
         def actionPress(event):
+            clear_text()
             self.coord['x1'] = event.x
             self.coord['y1'] = event.y
         
@@ -229,7 +244,7 @@ class App(CTk):
             filename = "temp/{}.png".format(os.getpid())
             ss_img.save(filename)
             result = self.reader.readtext (filename)
-            self.removeTempImage()
+            self.remove_temp_image()
             text = ''
             for x in result:
                 text += x[1]
@@ -238,7 +253,9 @@ class App(CTk):
             text_sr = self.canvas_sr.create_text(self.coord['x1'] + 3, self.coord['y1'] + 3, anchor="nw", text=result_trans.text,
                                         fill="white", font=('Helvetica 12 bold'), width=((self.coord['x2'] + 6) - (self.coord['x1'] + 3)))
             r = self.canvas_sr.create_rectangle(self.canvas_sr.bbox(text_sr), fill="black")
-            self.canvas_sr.tag_lower(r, text_sr)
+            x = self.canvas_sr.tag_lower(r, text_sr)
+            text_canvas.append (text_sr)
+            text_canvas.append (r)
             # ------------- CREATE FILE NAME RANDOM
         def actionMotion(event):
             if (self.rect != None):
